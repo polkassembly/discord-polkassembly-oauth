@@ -1,0 +1,10 @@
+{
+  "name": "discourse-polkassembly-auth",
+  "version": "0.0.1",
+  "repository": "https://github.com/polkassembly/discourse-polkassembly-oauth",
+  "author": "Polkassembly",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint-config-discourse": "^3.1.0"
+  }
+}

@@ -1,0 +1,4 @@
+plugins:
+  discourse_polkassembly_auth_enabled:
+    default: true
+    client: true
