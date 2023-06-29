@@ -7,12 +7,46 @@
 # url: https://github.com/polkassembly/discourse-polkassembly-oauth
 # required_version: 2.7.0
 
-enabled_site_setting :discourse_polkassembly_auth_enabled
+%w[
+  ../lib/omniauth/strategies/polkassembly_auth.rb
+].each { |path| load File.expand_path(path, __FILE__) }
 
-module ::PolkasseemblyAuth
-  PLUGIN_NAME = "discourse_polkassembly_auth"
+enabled_site_setting :discourse_polkassembly_auth_enabled
+register_svg_icon 'fab-github'
+
+class ::PolkassemblyAuthenticator < ::Auth::ManagedAuthenticator
+  def name
+    'polkassembly'
+  end
+
+  def register_middleware(omniauth)
+    omniauth.provider :polkassembly_auth,
+                      setup: lambda { |env|
+                        strategy = env['omniauth.strategy']
+                      }
+  end
+
+  def enabled?
+    SiteSetting.discourse_polkassembly_auth_enabled
+  end
+
+  def primary_email_verified?
+    false
+  end
 end
 
+auth_provider authenticator: ::PolkassemblyAuthenticator.new,
+              icon: 'fab-github',
+              title: 'Login with Polkassembly'
+
 after_initialize do
-  # Code which should run after Rails has finished booting
+  %w[
+    ../lib/discourse_polkassembly_auth/engine.rb
+    ../lib/discourse_polkassembly_auth/routes.rb
+    ../app/controllers/discourse_polkassembly_auth/auth_controller.rb
+  ].each { |path| load File.expand_path(path, __FILE__) }
+
+  Discourse::Application.routes.prepend do
+    mount ::DiscoursePolkassemblyAuth::Engine, at: '/discourse-polkassembly-auth'
+  end
 end
