@@ -13,6 +13,7 @@
 
 enabled_site_setting :discourse_polkassembly_auth_enabled
 register_svg_icon 'fab-github'
+register_asset 'stylesheets/discourse-polkassembly-auth.scss'
 
 class ::PolkassemblyAuthenticator < ::Auth::ManagedAuthenticator
   def name
@@ -44,9 +45,11 @@ after_initialize do
     ../lib/discourse_polkassembly_auth/engine.rb
     ../lib/discourse_polkassembly_auth/routes.rb
     ../app/controllers/discourse_polkassembly_auth/auth_controller.rb
+    ../app/controllers/polkassembly_controller.rb
   ].each { |path| load File.expand_path(path, __FILE__) }
 
   Discourse::Application.routes.prepend do
     mount ::DiscoursePolkassemblyAuth::Engine, at: '/discourse-polkassembly-auth'
+    get '/polkassembly-auth' => 'polkassembly#index'
   end
 end

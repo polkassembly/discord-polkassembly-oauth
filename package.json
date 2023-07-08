@@ -6,5 +6,8 @@
   "license": "MIT",
   "devDependencies": {
     "eslint-config-discourse": "^3.1.0"
+  },
+  "dependencies": {
+    "@polkadot/util-crypto": "^12.3.2"
   }
 }
