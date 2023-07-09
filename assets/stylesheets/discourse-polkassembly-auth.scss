@@ -1,0 +1,120 @@
+$text-blue: #243A57;
+$card-bg: #fff;
+
+.centered {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+main {
+	&.centered {
+		height: 96.5%;
+	}
+}
+
+.card {
+	color: $text-blue;
+  min-width: 320px;
+	max-width: 720px;
+	width: 50%;
+  padding: 1rem;
+  background-color: $card-bg;
+  border-radius: 4px;
+  box-shadow: 1px 3px 19px rgba(255, 255, 255, .15);
+}
+
+.login-card {
+	hr {
+		margin-top: -2px;
+		border-color: #999;
+	}
+
+	label {
+		font-weight: 500;
+		margin-bottom: 8px;
+	}
+
+	fieldset {
+		width: 100%;
+		margin-bottom: 10px;
+	}
+
+	.form-input {
+		color: $text-blue !important;
+		width: 100%;
+		border-radius: 4px;
+		background: transparent;
+		padding: 0.8rem !important;
+
+		&:focus {
+			border-color: $text-blue;
+		}
+	}
+
+	button {
+		width: 40%;
+		color: white;
+	}
+
+	.hr-text {
+		width: 100%; 
+		text-align: center; 
+		border-bottom: 1px solid rgba(173, 173, 173, 0.5); 
+		line-height: 0.1em;
+		margin: 2.5rem 0; 
+
+		span { 
+			background: #fff; 
+			padding: 0 10px; 
+		}
+
+	}
+
+	.wallet-button-group {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-rows: repeat(2, 1fr);
+		grid-column-gap: 10px;
+		grid-row-gap: 15px;
+		padding-bottom: 1rem;
+
+		.wallet-button {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			border-radius: 20px;
+			width: 60px;
+			height: 60px;
+			padding: 0.2rem;
+			margin: auto;
+			white-space: nowrap;
+			background-color: transparent;
+			border: 1px solid rgba(128, 128, 128, 0.5);
+			color: $text-blue;
+			transition: all 0.2s ease-in-out;
+
+			&:hover {
+				border-color: $text-blue;
+			}
+
+			svg {
+				width: 30px;
+				height: 30px;
+			}
+		}
+	}
+
+	.error-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-top: 1rem;
+		margin-bottom: 1rem;
+		padding: 0.5rem 1.5rem;
+		background: rgba(190, 0, 0, 0.8);
+		border-radius: 4px;
+		color: #fff;
+	}
+
+}
