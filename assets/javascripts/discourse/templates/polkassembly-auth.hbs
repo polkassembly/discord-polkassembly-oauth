@@ -1,12 +1,26 @@
 <main class="centered">
-	<div class="card login-card">
-		<h3>Login with Polkassembly</h3>
-		<hr>
+		{{#if loading}}
+			<div class="card login-card loader-container">
+				<h3>Login with Polkassembly</h3>
+				<hr>
+				<div class="centered">
+					<div class="loader"></div>
+				</div>
+			</div>
+		{{/if}}
+
+		<div class="{{if loading 'hidden'}} card login-card">
+			<h3>Login with Polkassembly</h3>
+			<hr>
 
 		{{#if error}}
-		<div class="error-container">
-			<p>Error: {{error}}</p>
-		</div>
+			<div class="error-container">
+				<p>Error: {{error}}</p>
+			</div>
+
+			<div class="centered">
+				<button class="btn btn-primary" type="button" {{action "resetError" on="click"}}>Go back</button>
+			</div>
 		{{else if tfa_token }}
 			<h4>Two Factor Authentication</h4>
 			<p>Please open the two-step verification app or extension and input the authentication code for your Polkassembly account.</p>
@@ -22,19 +36,32 @@
 					<button class="btn btn-primary" type="submit">Login</button>
 				</fieldset>
 			</form>
-		{{else if selectedWallet }}
 
+		{{!-- selectedWallet --}}
+		{{else if selectedWallet }}
+			<h4>Login using web-3 wallet</h4>
+				{{!-- TODO: show dropdown here --}}
 		{{else}}
 			{{!-- <form {{ on "submit" (action "submitWeb2Form") }}> --}}
-			<form>
+			<form {{action "submitWeb2Form" username password on="submit"}}>
 				<fieldset>
 					<label>Enter Username or Email</label>
-					<input type="text" class="form-input" placeholder="email@example.com" />
+					<input
+						type="text"
+						class="form-input"
+						id="username_input"
+						placeholder="email@example.com"
+					/>
 				</fieldset>
 				
 				<fieldset>
 					<label>Password</label>
-					<input type="password" class="form-input" placeholder="password" />
+					<input
+						type="password"
+						class="form-input"
+						id="password_input"
+						placeholder="password"
+					/>
 				</fieldset>
 
 				<fieldset class="centered">
@@ -45,7 +72,7 @@
 			<div class="hr-text"><span>or login with</span></div>
 
 			<div class="wallet-button-group">
-				{{!-- <button class="wallet-button" {{ on "click" (action "onWalletClick")}}> --}}
+				{{!-- <button class="wallet-button" {{ on "click" (action "fetchWalletAddresses")}}> --}}
 				<button class="wallet-button">
 					{{!-- Polkadot JS --}}
 					<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="zoom:1" viewBox="15 15 140 140" >
