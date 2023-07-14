@@ -175,60 +175,79 @@ export default Controller.extend({
     }
   },
 
-  async signupWithWeb3(selectedAddress, signRaw) {
-    const addressSignupStartResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressSignupStart`, {
-          body: JSON.stringify({ address: this.selectedAddress }),
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        });
-
-        const addressSignupStartResJSON = await addressSignupStartResponse.json() || null;
-
-        if(addressSignupStartResponse.status !== 200 || !addressSignupStartResJSON) { throw new Error(addressSignupStartResJSON?.message || 'Polkassembly API fetch error.'); }
-
-        console.log('addressSignupStartResJSON : ', addressSignupStartResJSON);
-
-        const signMessage = addressSignupStartResJSON?.signMessage;
-        if (!signMessage) { throw new Error('Challenge message not found'); }
-
-        const { signature } = await signRaw({
-          address: this.selectedAddress,
-          data: this.stringToHex(signMessage),
-          type: 'bytes'
-        });
-
-        const addressSignupResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressSignupConfirm`, {
-          body: JSON.stringify({ address: this.selectedAddress, signature, wallet: this.selectedWallet }),
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        });
-
-        const addressSignupResJSON = await addressSignupResponse.json() || null;
-        if(addressSignupResponse.status !== 200 || !addressSignupResJSON) { throw new Error(addressSignupResJSON?.message || 'Polkassembly API fetch error.'); }
-
-        if(addressSignupResJSON?.token) {
-          //TODO:  Decode token and send whatever you need to your backend to make things work!
-          return addressSignupResJSON.token;
+  async signWithMetamask(signMessage) {
+    return new Promise((resolve, reject) => {
+      window.ethereum.sendAsync({
+        method: 'personal_sign',
+        params: [signMessage, this.selectedAddress],
+        from: this.selectedAddress
+      }, (err, result) => {
+        if (err) {
+          reject(err);
+        } else if (result.error) {
+          reject(result.error);
+        } else {
+          resolve(result.result);
         }
+      });
+    });
   },
 
-  async submitWeb3Form(selectedAddress) {
-    if(!selectedAddress) { throw new Error('Address is required.'); }
-    this.set('loading', true);
+  async signupWithWeb3(signRaw) {
+    const addressSignupStartResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressSignupStart`, {
+      body: JSON.stringify({ address: this.selectedAddress }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: 'POST'
+    });
 
-    try {
-      const wallet = window.injectedWeb3[this.selectedWallet];
-      const injected = wallet && await wallet?.enable('discourse-polkassembly-auth');
+    const addressSignupStartResJSON = await addressSignupStartResponse.json() || null;
 
-			const signRaw = injected && injected.signer && injected.signer.signRaw;
-			if (!signRaw) { return console.error('Signer not available'); }
+    if(addressSignupStartResponse.status !== 200 || !addressSignupStartResJSON) { throw new Error(addressSignupStartResJSON?.message || 'Polkassembly API fetch error.'); }
 
-      const loginStartResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressLoginStart`, {
-        body: JSON.stringify({ address: selectedAddress, wallet: this.selectedWallet }),
+    console.log('addressSignupStartResJSON : ', addressSignupStartResJSON);
+
+    const signMessage = addressSignupStartResJSON?.signMessage;
+    if (!signMessage) { throw new Error('Challenge message not found'); }
+
+    let signature;
+
+    if(this.selectedWallet === 'metamask') {
+      signature = await this.signWithMetamask(signMessage);
+    } else {
+      if(!signRaw) { throw new Error('SignRaw function not found. Please try again.'); }
+
+      const { signature: signedMsg } = await signRaw({
+        address: this.selectedAddress,
+        data: this.stringToHex(signMessage),
+        type: 'bytes'
+      });
+
+      signature = signedMsg;
+    }
+
+    const addressSignupResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressSignupConfirm`, {
+      body: JSON.stringify({ address: this.selectedAddress, signature, wallet: this.selectedWallet }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: 'POST'
+    });
+
+    const addressSignupResJSON = await addressSignupResponse.json() || null;
+    if(addressSignupResponse.status !== 200 || !addressSignupResJSON) { throw new Error(addressSignupResJSON?.message || 'Polkassembly API fetch error.'); }
+
+    if(addressSignupResJSON?.token) {
+      console.log('got addressSignupResJSON.token');
+      //TODO:  Decode token and send whatever you need to your backend to make things work!
+      return addressSignupResJSON.token;
+    }
+  },
+
+  async getLoginStartSignMessage() {
+    const loginStartResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressLoginStart`, {
+        body: JSON.stringify({ address: this.selectedAddress, wallet: this.selectedWallet }),
         headers: {
           'Content-Type': 'application/json'
         },
@@ -243,14 +262,11 @@ export default Controller.extend({
 
       const signMessage = loginStartResJSON?.signMessage;
 			if (!signMessage) { throw new Error('Challenge message not found'); }
+      return signMessage;
+  },
 
-      const { signature } = await signRaw({
-				address: this.selectedAddress,
-				data: this.stringToHex(signMessage),
-				type: 'bytes'
-			});
-
-      const addressLoginResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressLogin`, {
+  async getAddressLoginResponse(signature) {
+    const addressLoginResponse = await fetch(`https://api.polkassembly.io/api/v1/auth/actions/addressLogin`, {
         body: JSON.stringify({ address: this.selectedAddress, signature, wallet: this.selectedWallet }),
         headers: {
           'Content-Type': 'application/json'
@@ -259,23 +275,55 @@ export default Controller.extend({
       });
 
       const addressLoginResJSON = await addressLoginResponse.json() || null;
+      return addressLoginResJSON;
+  },
 
-      // signup if not signed up
-      if (addressLoginResJSON.message === 'Please sign up prior to logging in with a web3 address') {
-        await this.signupWithWeb3(selectedAddress, signRaw);
-        return;
+  async handleAddressLogin(signature, signRaw) {
+    const addressLoginResJSON = await this.getAddressLoginResponse(signature);
+
+    // signup if not signed up
+    if (addressLoginResJSON.message === 'Please sign up prior to logging in with a web3 address') {
+      await this.signupWithWeb3(signRaw);
+      return;
+    }
+
+    if(addressLoginResJSON?.token) {
+      console.log('got addressLoginResJSON.token');
+      //TODO:  Decode token and send whatever you need to your backend to make things work!
+      return addressLoginResJSON.token;
+    } else if(addressLoginResJSON?.isTFAEnabled) {
+      if(!addressLoginResJSON?.tfa_token) { throw new Error(addressLoginResJSON?.error || 'TFA token missing. Please try again.'); }
+      this.set('user_id', addressLoginResJSON.user_id);
+      this.set('tfa_token', addressLoginResJSON.tfa_token);
+    }
+  },
+
+  async submitWeb3Form(selectedAddress) {
+    if(!selectedAddress) { throw new Error('Address is required.'); }
+    this.set('loading', true);
+
+    try {
+      const signMessage = await this.getLoginStartSignMessage();
+
+      if(this.selectedWallet === 'metamask') {
+        const signature = await this.signWithMetamask(signMessage);
+        await this.handleAddressLogin(signature);
+      } else {
+        const wallet = window.injectedWeb3[this.selectedWallet];
+        const injected = wallet && await wallet?.enable('discourse-polkassembly-auth');
+
+        const signRaw = injected && injected.signer && injected.signer.signRaw;
+        if (!signRaw) { return console.error('Signer not available'); }
+
+        const { signature } = await signRaw({
+          address: this.selectedAddress,
+          data: this.stringToHex(signMessage),
+          type: 'bytes'
+        });
+
+        await this.handleAddressLogin(signature);
       }
 
-      console.log('addressLoginResJSON : ', addressLoginResJSON);
-
-      if(addressLoginResJSON?.token) {
-        //TODO:  Decode token and send whatever you need to your backend to make things work!
-				return addressLoginResJSON.token;
-			} else if(addressLoginResJSON?.isTFAEnabled) {
-				if(!addressLoginResJSON?.tfa_token) { throw new Error(addressLoginResJSON?.error || 'TFA token missing. Please try again.'); }
-        this.set('user_id', addressLoginResJSON.user_id);
-        this.set('tfa_token', addressLoginResJSON.tfa_token);
-			}
     } catch (e) {
       this.set('error', e.message);
       console.log(e);
