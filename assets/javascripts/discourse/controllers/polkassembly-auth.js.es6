@@ -28,6 +28,15 @@ export default Controller.extend({
     return '0x' + hexString;
   },
 
+  decodeJWT(token) {
+    // Split the token into header, payload
+    const [, encodedPayload] = token.split('.');
+
+    // Decode the payload
+    const payload = JSON.parse(atob(encodedPayload));
+    return payload;
+  },
+
 	async submitWeb2Form(username, password) {
     if(!username || !password) { throw new Error('Username and password are required.'); }
 
@@ -46,11 +55,10 @@ export default Controller.extend({
 
       if(response.status !== 200 || !resJSON) { throw new Error(resJSON?.message || 'Polkassembly API fetch error.'); }
 
-      console.log('submitWeb2Form response : ', resJSON);
-
       if(resJSON?.token) {
-        //TODO:  Decode token and send whatever you need to your backend to make things work!
-				return resJSON.token;
+        const decodedToken = this.decodeJWT(resJSON.token);
+        console.log('submitWeb2Form decodedToken : ', decodedToken);
+				return decodedToken;
 			} else if(resJSON?.isTFAEnabled) {
 				if(!resJSON?.tfa_token) { throw new Error(resJSON?.error || 'TFA token missing. Please try again.'); }
         this.set('user_id', resJSON.user_id);
@@ -58,7 +66,6 @@ export default Controller.extend({
 			}
     } catch (e) {
       this.set('error', e.message);
-      console.log(e);
     } finally {
       this.set('loading', false);
     }
@@ -85,11 +92,10 @@ export default Controller.extend({
 
       if(response.status !== 200 || !resJSON) { throw new Error(resJSON?.message || 'Polkassembly API fetch error.'); }
 
-      console.log('submit2FAForm response : ', resJSON);
-
       if(resJSON?.token) {
-        //TODO:  Decode token and send whatever you need to your backend to make things work!
-				return resJSON.token;
+        const decodedToken = this.decodeJWT(resJSON.token);
+        console.log('submitWeb2Form decodedToken : ', decodedToken);
+				return decodedToken;
 			}
     } catch (e) {
       console.log(e);
@@ -239,9 +245,9 @@ export default Controller.extend({
     if(addressSignupResponse.status !== 200 || !addressSignupResJSON) { throw new Error(addressSignupResJSON?.message || 'Polkassembly API fetch error.'); }
 
     if(addressSignupResJSON?.token) {
-      console.log('got addressSignupResJSON.token');
-      //TODO:  Decode token and send whatever you need to your backend to make things work!
-      return addressSignupResJSON.token;
+      const decodedToken = this.decodeJWT(addressSignupResJSON.token);
+      console.log('submitWeb2Form decodedToken : ', decodedToken);
+      return decodedToken;
     }
   },
 
@@ -288,9 +294,9 @@ export default Controller.extend({
     }
 
     if(addressLoginResJSON?.token) {
-      console.log('got addressLoginResJSON.token');
-      //TODO:  Decode token and send whatever you need to your backend to make things work!
-      return addressLoginResJSON.token;
+      const decodedToken = this.decodeJWT(addressLoginResJSON.token);
+      console.log('submitWeb2Form decodedToken : ', decodedToken);
+      return decodedToken;
     } else if(addressLoginResJSON?.isTFAEnabled) {
       if(!addressLoginResJSON?.tfa_token) { throw new Error(addressLoginResJSON?.error || 'TFA token missing. Please try again.'); }
       this.set('user_id', addressLoginResJSON.user_id);
@@ -321,7 +327,7 @@ export default Controller.extend({
           type: 'bytes'
         });
 
-        await this.handleAddressLogin(signature);
+        await this.handleAddressLogin(signature, signRaw);
       }
 
     } catch (e) {
