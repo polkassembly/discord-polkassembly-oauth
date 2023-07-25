@@ -2,3 +2,8 @@ en:
   js:
     discourse_polkassembly_auth:
       placeholder: placeholder
+    action_buttons:
+      title: "Sign-in with Polkassembly"
+      buttons:
+        login: "Login"
+

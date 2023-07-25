@@ -1,40 +1,78 @@
 <main class="centered">
-	<div class="card login-card">
-		<h3>Login with Polkassembly</h3>
-		<hr>
+		{{#if loading}}
+			<div class="card login-card loader-container">
+				<h3>Login with Polkassembly</h3>
+				<hr>
+				<div class="centered">
+					<div class="loader"></div>
+				</div>
+			</div>
+		{{/if}}
+
+		<div class="{{if loading 'hidden'}} card login-card">
+			<h3>Login with Polkassembly</h3>
+			<hr>
 
 		{{#if error}}
-		<div class="error-container">
-			<p>Error: {{error}}</p>
-		</div>
+			<div class="error-container">
+				<p>Error: {{error}}</p>
+			</div>
+
+			<div class="centered">
+				<button class="btn btn-primary" type="button" {{action "resetState" on="click"}}>Go back</button>
+			</div>
 		{{else if tfa_token }}
 			<h4>Two Factor Authentication</h4>
 			<p>Please open the two-step verification app or extension and input the authentication code for your Polkassembly account.</p>
 
-			{{!-- <form {{ on "submit" (action "submit2FAForm") }}> --}}
-			<form>
+			<form {{action "submit2FAForm" on="submit"}}>
 				<fieldset>
 					<label>Authentication Code</label>
-					<input type="text" class="form-input" placeholder="# # # # # #" />
+					<input type="text" id="auth_code_input" class="form-input" placeholder="# # # # # #" />
 				</fieldset>
 
 				<fieldset class="centered">
 					<button class="btn btn-primary" type="submit">Login</button>
 				</fieldset>
 			</form>
-		{{else if selectedWallet }}
 
+		{{else if selectedWallet }}
+			<h4 class="wallet-name">{{ selectedWallet }}</h4>
+
+			<div class="custom-select">
+				<select id="wallet_address_select">
+					{{#each walletAddresses as |item|}}
+						<option class="wallet-select-option" value={{ item.address }}>
+							{{#if item.name }} {{ item.name }} - {{/if}} {{ item.address }}
+						</option>
+					{{/each}}
+				</select>
+			</div>
+
+			<div class="wallet-actions">
+				<button class="btn btn-text" type="button" {{action "resetState" on="click"}}>Go back</button>
+				<button class="btn btn-primary" type="button" {{action "submitWeb3Form" on="click"}}>Login</button>
+			</div>
 		{{else}}
-			{{!-- <form {{ on "submit" (action "submitWeb2Form") }}> --}}
-			<form>
+			<form {{action "submitWeb2Form" on="submit"}}>
 				<fieldset>
 					<label>Enter Username or Email</label>
-					<input type="text" class="form-input" placeholder="email@example.com" />
+					<input
+						type="text"
+						class="form-input"
+						id="username_input"
+						placeholder="email@example.com"
+					/>
 				</fieldset>
 				
 				<fieldset>
 					<label>Password</label>
-					<input type="password" class="form-input" placeholder="password" />
+					<input
+						type="password"
+						class="form-input"
+						id="password_input"
+						placeholder="password"
+					/>
 				</fieldset>
 
 				<fieldset class="centered">
@@ -45,8 +83,7 @@
 			<div class="hr-text"><span>or login with</span></div>
 
 			<div class="wallet-button-group">
-				{{!-- <button class="wallet-button" {{ on "click" (action "onWalletClick")}}> --}}
-				<button class="wallet-button">
+				<button class="wallet-button" {{action "fetchWalletAddresses" "polkadot-js" on="click"}}>
 					{{!-- Polkadot JS --}}
 					<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="zoom:1" viewBox="15 15 140 140" >
 						<circle cx="85" cy="85" r="70" fill="#ff8c00"/>
@@ -54,7 +91,7 @@
 					</svg>
 				</button>
 
-				<button class="wallet-button">
+				<button class="wallet-button" {{action "fetchWalletAddresses" "talisman" on="click"}}>
 					{{!-- Talisman --}}
 					<svg
 						viewBox="0 0 24 24"
@@ -107,7 +144,7 @@
 					</svg>
 				</button>
 
-				<button class="wallet-button">
+				<button class="wallet-button" {{action "fetchWalletAddresses" "subwallet-js" on="click"}}>
 					{{!-- Subwallet --}}
 					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 250 250" >
 						<path fill="#000" d="M0 0h250v250H0z"/>
@@ -189,28 +226,12 @@
 					</svg>
 				</button>
 
-				<button class="wallet-button">
+				<button class="wallet-button" {{action "fetchWalletAddresses" "metamask" on="click"}}>
 					{{!-- Metamask --}}
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 507.83 470.86"><defs><style>.a{fill:#e2761b;stroke:#e2761b;}.a,.b,.c,.d,.e,.f,.g,.h,.i,.j{stroke-linecap:round;stroke-linejoin:round;}.b{fill:#e4761b;stroke:#e4761b;}.c{fill:#d7c1b3;stroke:#d7c1b3;}.d{fill:#233447;stroke:#233447;}.e{fill:#cd6116;stroke:#cd6116;}.f{fill:#e4751f;stroke:#e4751f;}.g{fill:#f6851b;stroke:#f6851b;}.h{fill:#c0ad9e;stroke:#c0ad9e;}.i{fill:#161616;stroke:#161616;}.j{fill:#763d16;stroke:#763d16;}</style></defs><title>metamask</title><polygon class="a" points="482.09 0.5 284.32 147.38 320.9 60.72 482.09 0.5"/><polygon class="b" points="25.54 0.5 221.72 148.77 186.93 60.72 25.54 0.5"/><polygon class="b" points="410.93 340.97 358.26 421.67 470.96 452.67 503.36 342.76 410.93 340.97"/><polygon class="b" points="4.67 342.76 36.87 452.67 149.57 421.67 96.9 340.97 4.67 342.76"/><polygon class="b" points="143.21 204.62 111.8 252.13 223.7 257.1 219.73 136.85 143.21 204.62"/><polygon class="b" points="364.42 204.62 286.91 135.46 284.32 257.1 396.03 252.13 364.42 204.62"/><polygon class="b" points="149.57 421.67 216.75 388.87 158.71 343.55 149.57 421.67"/><polygon class="b" points="290.88 388.87 358.26 421.67 348.92 343.55 290.88 388.87"/><polygon class="c" points="358.26 421.67 290.88 388.87 296.25 432.8 295.65 451.28 358.26 421.67"/><polygon class="c" points="149.57 421.67 212.18 451.28 211.78 432.8 216.75 388.87 149.57 421.67"/><polygon class="d" points="213.17 314.54 157.12 298.04 196.67 279.95 213.17 314.54"/><polygon class="d" points="294.46 314.54 310.96 279.95 350.71 298.04 294.46 314.54"/><polygon class="e" points="149.57 421.67 159.11 340.97 96.9 342.76 149.57 421.67"/><polygon class="e" points="348.72 340.97 358.26 421.67 410.93 342.76 348.72 340.97"/><polygon class="e" points="396.03 252.13 284.32 257.1 294.66 314.54 311.16 279.95 350.91 298.04 396.03 252.13"/><polygon class="e" points="157.12 298.04 196.87 279.95 213.17 314.54 223.7 257.1 111.8 252.13 157.12 298.04"/><polygon class="f" points="111.8 252.13 158.71 343.55 157.12 298.04 111.8 252.13"/><polygon class="f" points="350.91 298.04 348.92 343.55 396.03 252.13 350.91 298.04"/><polygon class="f" points="223.7 257.1 213.17 314.54 226.29 382.31 229.27 293.07 223.7 257.1"/><polygon class="f" points="284.32 257.1 278.96 292.87 281.34 382.31 294.66 314.54 284.32 257.1"/><polygon class="g" points="294.66 314.54 281.34 382.31 290.88 388.87 348.92 343.55 350.91 298.04 294.66 314.54"/><polygon class="g" points="157.12 298.04 158.71 343.55 216.75 388.87 226.29 382.31 213.17 314.54 157.12 298.04"/><polygon class="h" points="295.65 451.28 296.25 432.8 291.28 428.42 216.35 428.42 211.78 432.8 212.18 451.28 149.57 421.67 171.43 439.55 215.75 470.36 291.88 470.36 336.4 439.55 358.26 421.67 295.65 451.28"/><polygon class="i" points="290.88 388.87 281.34 382.31 226.29 382.31 216.75 388.87 211.78 432.8 216.35 428.42 291.28 428.42 296.25 432.8 290.88 388.87"/><polygon class="j" points="490.44 156.92 507.33 75.83 482.09 0.5 290.88 142.41 364.42 204.62 468.37 235.03 491.43 208.2 481.49 201.05 497.39 186.54 485.07 177 500.97 164.87 490.44 156.92"/><polygon class="j" points="0.5 75.83 17.39 156.92 6.66 164.87 22.56 177 10.44 186.54 26.34 201.05 16.4 208.2 39.26 235.03 143.21 204.62 216.75 142.41 25.54 0.5 0.5 75.83"/><polygon class="g" points="468.37 235.03 364.42 204.62 396.03 252.13 348.92 343.55 410.93 342.76 503.36 342.76 468.37 235.03"/><polygon class="g" points="143.21 204.62 39.26 235.03 4.67 342.76 96.9 342.76 158.71 343.55 111.8 252.13 143.21 204.62"/><polygon class="g" points="284.32 257.1 290.88 142.41 321.1 60.72 186.93 60.72 216.75 142.41 223.7 257.1 226.09 293.27 226.29 382.31 281.34 382.31 281.74 293.27 284.32 257.1"/></svg>
 				</button>
 
-				<button class="wallet-button">
-					{{!-- Wallet Connect --}}
-					<svg version="1.1" baseProfile="basic" id="Layer_1" 
-						xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 387.6 237.6"
-						xml:space="preserve"
-					>
-						<path id="WalletConnect_00000073703063438220642730000002917717552236472496_" fill="#3B99FC" d="M79.4,46.4
-							c63.2-61.9,165.7-61.9,228.9,0l7.6,7.4c3.2,3.1,3.2,8.1,0,11.2l-26,25.5c-1.6,1.5-4.1,1.5-5.7,0l-10.5-10.3
-							c-44.1-43.2-115.6-43.2-159.7,0l-11.2,11c-1.6,1.5-4.1,1.5-5.7,0L71,65.8c-3.2-3.1-3.2-8.1,0-11.2L79.4,46.4z M362.1,99.1l23.2,22.7
-							c3.2,3.1,3.2,8.1,0,11.2L280.8,235.3c-3.2,3.1-8.3,3.1-11.4,0c0,0,0,0,0,0l-74.1-72.6c-0.8-0.8-2.1-0.8-2.9,0c0,0,0,0,0,0
-							l-74.1,72.6c-3.2,3.1-8.3,3.1-11.4,0c0,0,0,0,0,0L2.4,133c-3.2-3.1-3.2-8.1,0-11.2l23.2-22.7c3.2-3.1,8.3-3.1,11.4,0l74.1,72.6
-							c0.8,0.8,2.1,0.8,2.9,0c0,0,0,0,0,0l74.1-72.6c3.2-3.1,8.3-3.1,11.4,0c0,0,0,0,0,0l74.1,72.6c0.8,0.8,2.1,0.8,2.9,0l74.1-72.6
-							C353.8,96,358.9,96,362.1,99.1z"/>
-					</svg>
-				</button>
-
-				<button class="wallet-button">
+				<button class="wallet-button mobile-only" {{action "fetchWalletAddresses" "polkadot-js" on="click"}}>
 					{{!-- Nova Wallet --}}
 					<svg viewBox="0 0 145 145" fill="none" xmlns="http://www.w3.org/2000/svg">
 						<path d="M0 40C0 17.9086 17.9086 0 40 0H105C127.091 0 145 17.9086 145 40V105C145 127.091 127.091 145 105 145H40C17.9086 145 0 127.091 0 105V40Z" fill="url(#paint0_linear_1014_14373)"/>
